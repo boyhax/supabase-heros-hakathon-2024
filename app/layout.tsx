@@ -9,8 +9,8 @@ const defaultUrl = process.env.VERCEL_URL
 
 export const metadata = {
   metadataBase: new URL(defaultUrl),
-  title: "Next.js and Supabase Starter Kit",
-  description: "The fastest way to build apps with Next.js and Supabase",
+  title: "supabase heros",
+  description: "hakathon 2024 showing out appreciation for supabase",
 };
 
 export default function RootLayout({
@@ -33,18 +33,15 @@ export default function RootLayout({
   return (
     <html lang="en" className={GeistSans.className}>
       <body className="bg-background  text-foreground">
-      <nav className="w-full flex justify-center border-b border-b-foreground/10 h-16">
-      
-      <div className="w-full max-w-6xl flex justify-between items-center p-3 text-sm">
-        <div className={'w-[500px]'}>
-        <h2 className="font-bold text-4xl my-4">Cards for every one</h2>
+        <nav className="w-full flex justify-center border-b border-b-foreground/10 h-16">
+          <div className="w-full max-w-6xl flex justify-between items-center p-3 text-sm">
+            <div className={"w-[500px]"}>
+              <h2 className="font-bold text-4xl my-4">Supabase Heros</h2>
+            </div>
 
-        
-        </div>
-     
-        {isSupabaseConnected && <AuthButton />}
-      </div>
-    </nav>
+            {isSupabaseConnected && <AuthButton />}
+          </div>
+        </nav>
         <main className="min-h-screen flex flex-col items-center">
           {children}
         </main>
