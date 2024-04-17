@@ -5,18 +5,12 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import SimpleCard from "./SimpleCard";
 import useFilter from "./hooks/useFilter";
+//@ts-ignore
 import InfiniteScroll from "react-infinite-scroller";
+import { Card } from "./card";
 
-export type Card = {
-  id: string;
-  title: string;
-  description: string;
-  tags: string[];
-  metas: string;
-  images: string[];
-  likes: number;
-  types: string[];
-};
+
+const limit = 5;
 export default function SearchCards() {
   const supabase = createClient();
   const [loading, setloading] = useState(true);
@@ -28,6 +22,7 @@ export default function SearchCards() {
   useEffect(() => {
     search();
   }, [searchParams]);
+  console.log("hasMore :>> ", hasMore);
 
   async function search() {
     setloading(true);
@@ -44,14 +39,14 @@ export default function SearchCards() {
       if (q) {
         query.ilike("fts", `%${q}%`);
       }
-
       const { data, error, count } = await query
-        .limit(5)
+        .limit(limit)
         .order("created_at", { ascending: false });
 
       if (data) {
         setcards(data as Card[]);
-        sethasMore(count ? count > data?.length! + cards?.length! : false);
+        const hasMore = data?.length >= limit;
+        sethasMore(hasMore);
       } else {
         sethasMore(false);
         console.log("no search result");
@@ -75,7 +70,8 @@ export default function SearchCards() {
 
       const query = supabase
         .from("cards")
-        .select("id", { count: "exact", head: false });
+        .select("id", { count: "exact", head: false })
+        .order("created_at", { ascending: false });
       if (tags) {
         query.contains("tags", tags);
       }
@@ -83,14 +79,19 @@ export default function SearchCards() {
         query.ilike("fts", `%${q}%`);
       }
       const start = cards?.length! + 1 || 0;
-      const end = start + 1;
+      const end = start + limit;
+      const lastcard = cards?.pop()!;
+      const lastTime = lastcard
+        ? lastcard?.created_at
+        : new Date().toISOString();
       const { data, error, count } = await query
-        .range(start, end)
-        .order("created_at", { ascending: false });
-
+        .range(start,end)
+        .limit(limit);
       if (data) {
         setcards([...cards, ...(data as Card[])]);
-        sethasMore((count || 0) > data?.length! + cards?.length!);
+
+        const hasMore = data?.length >= limit;
+        sethasMore(hasMore);
       } else {
         sethasMore(false);
         console.log("no search result");
