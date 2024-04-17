@@ -1,40 +1,153 @@
 "use client";
 import { createClient } from "@/utils/supabase/client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 // @ts-ignore
 import Files from "react-files";
 // @ts-ignore
 import QuillEditor from "@/components/QuillEditor";
 import "react-quill/dist/quill.snow.css";
-import { WithContext as ReactTags } from "react-tag-input";
-import suggestions from "@/utils/tagsSuggetions";
-import { Card } from "@/components/card";
 
+import { Card } from "@/components/card";
+import fileToBlob from "@/utils/fileToBlob";
+import { useRouter } from "next/navigation";
+import useFetch from "@/components/hooks/useFetch";
+import TagInput from "@/components/TagInput";
+
+const max_images = 2;
+
+async function getUserCard() {
+  try {
+    const supabase = createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) {
+      return { data: null, error: { message: "no card found" } };
+    } else {
+      return await supabase
+        .from("cards")
+        .select()
+        .eq("user_id", user.id)
+        .single();
+    }
+  } catch (error) {
+    console.log("error :>> ", error);
+  }
+}
+async function deleteStorageObjects(paths: string[]) {
+  const supabase = createClient();
+  return await supabase.storage.from("images").remove(paths);
+}
+
+async function uploadFiles(files: File[]) {
+  const supabase = createClient();
+
+  const queries = files.map((file) =>
+    fileToBlob(file).then((blob) =>
+      supabase.storage.from("images").upload("public/" + file.name, blob, {
+        cacheControl: "3600",
+        upsert: false,
+      })
+    )
+  );
+  const uplodaResult = await Promise.all(queries);
+  let urls: string[] = [];
+  let values: (
+    | {
+        data: {
+          path: string;
+        };
+        error: null;
+      }
+    | {
+        data: null;
+        error: any;
+      }
+  )[] = [];
+  uplodaResult.forEach((value, index, array) => {
+    value.data &&
+      value.data.path &&
+      urls.push(
+        supabase.storage.from("images").getPublicUrl(value.data.path).data
+          .publicUrl
+      );
+    values.push(value);
+  });
+  return { urls, values };
+}
 export default function Create() {
+  const router = useRouter();
+  const [loading, setloading] = useState(false);
   const supabase = createClient();
   const [images, setimages] = useState<File[]>();
-  const [data, setdata] = useState<Partial<Card>>({});
+  const [data, setdata] = useState<Partial<Card>>({
+    type: "simple",
+    description: "using supabase is fun ",
+    title: "supabase user was here",
+  });
+
   const handleChange = (files: any) => {
     console.log(files);
     setimages(files);
   };
-
+  async function hundleSubmit() {
+    try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) {
+        return;
+      }
+      setloading(true);
+      let urls: string[] = [];
+      if (images?.length) {
+        const upload = await uploadFiles(images);
+        urls = upload.urls;
+      }
+      const newData = {
+        ...data,
+        user_id: user.id,
+        images: urls,
+      };
+      const { data: uploaded, error } = await supabase
+        .from("cards")
+        .upsert(newData)
+        .select()
+        .single();
+      console.log("uploaded :>> ", uploaded);
+      if (error) {
+        await deleteStorageObjects(
+          urls.map((url) =>
+            url
+              .split("/")
+              .slice(url.split("/").length - 3)
+              .join("/")
+          )
+        );
+      }
+      
+      setloading(false);
+      router.push("/");
+    } catch (error) {
+      console.log(error);
+      setloading(false);
+    }
+  }
   const handleError = (error: any, file: any) => {
     console.log("error code " + error.code + ": " + error.message);
-  };
-  const [tags, setTags] = useState([{ id: "Supabase", text: "Supabase" }]);
-
-  const handleDelete = (i: number) => {
-    setTags(tags.filter((tag, index) => index !== i));
-  };
-
-  const handleAddition = (tag: any) => {
-    setTags([...tags, tag]);
   };
 
   return (
     <>
-      <form className={"mt-4 flex flex-col w-full px-20 justify-start gap-2"}>
+      <form
+        id={"form"}
+        key={"createform"}
+        onSubmit={(e) => {
+          e.preventDefault();
+          hundleSubmit();
+        }}
+        className={"mt-4 flex flex-col w-full px-20 justify-start gap-3"}
+      >
         <Files
           className="files-dropzone"
           onChange={handleChange}
@@ -77,48 +190,42 @@ export default function Create() {
         <input
           type="text"
           name={"title"}
+          value={data?.title!}
           minLength={10}
           maxLength={100}
           placeholder="Title"
           className="input input-bordered w-full max-w-xs"
+          onChange={(e) => setdata({ ...data, title: e.currentTarget.value })}
         />
         <input
           type="text"
-          name={"desciption"}
+          name={"description"}
+          value={data?.description!}
           maxLength={200}
-          placeholder="desciption"
+          placeholder="description"
           className="input input-bordered w-full max-w-xl"
+          onChange={(e) =>
+            setdata({ ...data, description: e.currentTarget.value })
+          }
         />
-        <ReactTags
-          tags={tags}
-          suggestions={suggestions}
-          //   delimiters={delimiters}
-          handleDelete={handleDelete}
-          handleAddition={handleAddition}
-          // handleDrag={handleDrag}
-          // handleTagClick={handleTagClick}
-          inputFieldPosition="bottom"
-          autocomplete
-          inline
-          classNames={{
-            tag: "border rounded-xl p-1  ",
-            tags: "tagsClass",
-            tagInput: "tagInputClass input input-bordered",
-            tagInputField: "tagInputFieldClass",
-            selected: "selectedClass",
-            remove: "removeClass",
-            suggestions: "suggestionsClass",
-            activeSuggestion: "activeSuggestionClass",
-            // editTagInput: "editTagInputClass",
-            // editTagInputField: "editTagInputField",
-            // clearAll: "clearAllClass",
-          }}
+        <TagInput
+          onChange={(tags) => setdata({ ...data, tags })}
+          value={data?.tags ?? []}
         />
         <QuillEditor
           onChange={(text) => setdata({ ...data, body: text })}
           value={data?.body! || ""}
           key={"quilleditorCreate"}
         />
+
+        <button
+          disabled={loading}
+          form={"form"}
+          type={"submit"}
+          className={"btn btn-primary  "}
+        >
+          Publish
+        </button>
       </form>
     </>
   );

@@ -1,7 +1,7 @@
 import { Tag } from "react-tag-input";
 
 const suggestions: Tag[] = [
-  { id: "Developer", text: "Developer" },
+  { id: "supabase", text: "supabase" },
   { id: "React", text: "React" },
   { id: "Tailwind", text: "Tailwind" },
   { id: "Nextjs", text: "Nextjs" },

@@ -1,3 +1,4 @@
+'use client'
 import ReactQuill from "react-quill";
 
 export default function QuillEditor({
@@ -13,6 +14,7 @@ export default function QuillEditor({
     return (
       <div>
         <ReactQuill
+        
           value={value || ""}
           modules={modules}
           formats={formats}
@@ -32,7 +34,9 @@ export default function QuillEditor({
         { indent: "-1" },
         { indent: "+1" },
       ],
-      ["link", "image"],
+      ["link",
+      //  "image"
+      ],
       ["clean"],
     ],
   };
@@ -48,6 +52,6 @@ export default function QuillEditor({
     "bullet",
     "indent",
     "link",
-    "image",
+    // "image",
   ];
   
