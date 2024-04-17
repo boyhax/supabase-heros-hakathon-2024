@@ -1,8 +1,8 @@
 'use client'
 import { useEffect, useState } from "react";
 
-export default  function useFetch<T>( query :  ()=>Promise<T> ) {
-  const [data, setdata] = useState<T|any>();
+export default  function useFetch<T=any>( query :  ()=>Promise<T> ) {
+  const [data, setdata] = useState<T|undefined>();
   const [loading, setloading] = useState(true);
   const [error, seterror] = useState<any>(null);
 
@@ -16,7 +16,7 @@ export default  function useFetch<T>( query :  ()=>Promise<T> ) {
         const result = await query()
         setdata(result)
     }catch(error){
-        setdata(null)
+        setdata(undefined)
         seterror(error)
         setloading(false)
 
