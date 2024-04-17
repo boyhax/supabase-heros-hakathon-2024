@@ -7,5 +7,7 @@ export type Card = {
     images?: string[];
     likes: number;
     type: string;
-    body?:string
+    body?:string,
+    price?:number,
+    created_at:string,
   };
