@@ -1,81 +1,24 @@
 "use client";
 import { createClient } from "@/utils/supabase/client";
-import { useEffect, useState } from "react";
+import { useMemo, useState } from "react";
+
 // @ts-ignore
-import Files from "react-files";
-// @ts-ignore
-import QuillEditor from "@/components/QuillEditor";
-import "react-quill/dist/quill.snow.css";
-
-import { Card } from "@/components/card";
-import fileToBlob from "@/utils/fileToBlob";
-import { useRouter } from "next/navigation";
-import useFetch from "@/components/hooks/useFetch";
-import TagInput from "@/components/TagInput";
-
-const max_images = 2;
-
-async function getUserCard() {
-  try {
-    const supabase = createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) {
-      return { data: null, error: { message: "no card found" } };
-    } else {
-      return await supabase
-        .from("cards")
-        .select()
-        .eq("user_id", user.id)
-        .single();
-    }
-  } catch (error) {
-    console.log("error :>> ", error);
-  }
-}
-async function deleteStorageObjects(paths: string[]) {
-  const supabase = createClient();
-  return await supabase.storage.from("images").remove(paths);
-}
-
-async function uploadFiles(files: File[]) {
-  const supabase = createClient();
-
-  const queries = files.map((file) =>
-    fileToBlob(file).then((blob) =>
-      supabase.storage.from("images").upload("public/" + file.name, blob, {
-        cacheControl: "3600",
-        upsert: false,
-      })
-    )
-  );
-  const uplodaResult = await Promise.all(queries);
-  let urls: string[] = [];
-  let values: (
-    | {
-        data: {
-          path: string;
-        };
-        error: null;
-      }
-    | {
-        data: null;
-        error: any;
-      }
-  )[] = [];
-  uplodaResult.forEach((value, index, array) => {
-    value.data &&
-      value.data.path &&
-      urls.push(
-        supabase.storage.from("images").getPublicUrl(value.data.path).data
-          .publicUrl
-      );
-    values.push(value);
+const DynamicTextEditor =dynamic(() => import("@/components/QuillEditor"), {
+    
+  loading: () => <p>loading...</p>,
+  
+  ssr: false,
+  
   });
-  return { urls, values };
-}
-export default function Create() {
+import TagInput from "@/components/TagInput";
+import { Card } from "@/components/card";
+import { deleteStorageObjects, uploadFiles } from "@/utils/supabase/storage";
+import { useRouter } from "next/navigation";
+import ImagePicker from "@/components/ImagePicker";
+import dynamic from "next/dynamic";
+
+export default function Create(props: any) {
+  const max_images = 2;
   const router = useRouter();
   const [loading, setloading] = useState(false);
   const supabase = createClient();
@@ -85,10 +28,10 @@ export default function Create() {
     description: "using supabase is fun ",
     title: "supabase user was here",
   });
-
-  const handleChange = (files: any) => {
+  
+  const hundleImageChange = (files: File[]) => {
     console.log(files);
-    setimages(files);
+    setimages(files.slice(0, max_images));
   };
   async function hundleSubmit() {
     try {
@@ -125,7 +68,7 @@ export default function Create() {
           )
         );
       }
-      
+
       setloading(false);
       router.push("/");
     } catch (error) {
@@ -133,9 +76,7 @@ export default function Create() {
       setloading(false);
     }
   }
-  const handleError = (error: any, file: any) => {
-    console.log("error code " + error.code + ": " + error.message);
-  };
+  
 
   return (
     <>
@@ -148,45 +89,12 @@ export default function Create() {
         }}
         className={"mt-4 flex flex-col w-full px-20 justify-start gap-3"}
       >
-        <Files
-          className="files-dropzone"
-          onChange={handleChange}
-          onError={handleError}
-          accepts={["image/*"]}
-          multiple
-          maxFileSize={10000000}
-          minFileSize={0}
-          clickable
-        >
-          <div className="  w-64 max-w-sm h-56 bg-background/90 border border-dashed rounded-xl flex justify-center items-center p-5">
-            {images?.length ? (
-              images?.slice(0, 2).map((file, index) => (
-                <div
-                  key={index}
-                  className="relative w-full h-full overflow-hidden rounded-xl"
-                >
-                  <img
-                    src={URL.createObjectURL(file)}
-                    alt={`Image ${index + 1}`}
-                    className="absolute inset-0 w-full h-full object-cover"
-                  />
-                  <div className="absolute inset-0 bg-black opacity-0 hover:opacity-50 transition-opacity duration-300 flex justify-center items-center">
-                    <span className="text-white">change {index + 1}</span>
-                  </div>
-                </div>
-              ))
-            ) : (
-              <div
-                key={"imagepick"}
-                className="relative w-full h-full overflow-hidden rounded-xl"
-              >
-                <div className="absolute inset-0 bg-black opacity-40 hover:opacity-50 transition-opacity duration-300 flex justify-center items-center">
-                  <span className="text-white">pick images </span>
-                </div>
-              </div>
-            )}
-          </div>
-        </Files>
+        <ImagePicker
+          files={images || []}
+          onChange={hundleImageChange}
+          onError={(error) => {}}
+          key={"imagepicker"}
+        />
         <input
           type="text"
           name={"title"}
@@ -212,7 +120,7 @@ export default function Create() {
           onChange={(tags) => setdata({ ...data, tags })}
           value={data?.tags ?? []}
         />
-        <QuillEditor
+        <DynamicTextEditor
           onChange={(text) => setdata({ ...data, body: text })}
           value={data?.body! || ""}
           key={"quilleditorCreate"}

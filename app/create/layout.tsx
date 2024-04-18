@@ -1,11 +1,12 @@
-import DeployButton from "@/components/DeployButton";
-import AuthButton from "@/components/AuthButton";
 import { createClient } from "@/utils/supabase/server";
-import FetchDataSteps from "@/components/tutorial/FetchDataSteps";
-import Header from "@/components/Logos";
 import { redirect } from "next/navigation";
+import { Suspense } from "react";
 
-export default async function ProtectedPageLayout({children}:{children:any}) {
+export default async function ProtectedPageLayout({
+  children,
+}: {
+  children: any;
+}) {
   const supabase = createClient();
 
   const {
@@ -17,8 +18,10 @@ export default async function ProtectedPageLayout({children}:{children:any}) {
   }
 
   return (
-   <div className={'flex flex-col mx-9 sm:mx-12  items-center w-full'}>
-    {children}
-    </div>
+    <Suspense fallback={<div className={"loading-infinity m-auto "}></div>}>
+      <div className={"flex flex-col mx-9 sm:mx-12  items-center w-full"}>
+        {children}
+      </div>
+    </Suspense>
   );
 }
