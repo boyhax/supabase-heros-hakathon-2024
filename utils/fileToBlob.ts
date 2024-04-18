@@ -1,3 +1,4 @@
+'use client'
 export default function fileToBlob(file:File):Promise<Blob> {
 
     return new Promise((resolve, reject) => {
