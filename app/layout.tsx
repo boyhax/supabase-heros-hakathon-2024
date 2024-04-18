@@ -2,6 +2,7 @@ import { GeistSans } from "geist/font/sans";
 import "./globals.css";
 import { createClient } from "@/utils/supabase/server";
 import AuthButton from "@/components/AuthButton";
+import { Suspense } from "react";
 
 const defaultUrl = process.env.VERCEL_URL
   ? `https://${process.env.VERCEL_URL}`
@@ -43,7 +44,11 @@ export default function RootLayout({
           </div>
         </nav>
         <main className="min-h-screen flex flex-col items-center">
-          {children}
+          <Suspense
+            fallback={<div className={"loading-infinity m-auto "}></div>}
+          >
+            {children}
+          </Suspense>
         </main>
       </body>
     </html>

@@ -1,12 +1,11 @@
-"use client";
-
+'use client'
 import Filters from "@/components/Filters";
 import Footer from "@/components/Footer";
 import SearchBar from "@/components/SearchBar";
 import SearchCards from "@/components/SearchCards";
 import { useRouter } from "next/navigation";
 
-export default async function Index() {
+export default  function Index(props: any) {
   const router = useRouter();
 
   return (
