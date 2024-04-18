@@ -28,10 +28,10 @@ export default function SimpleCard({ id }: { id: string; card?: Card }) {
   return (
     <div className={`card card-compact  glass w-96  shadow-md `}>
       {card?.images?.length ? (
-        <div className={`h-56  carousel carousel-vertical rounded-box `}>
+        <div  className={`h-56  carousel carousel-vertical rounded-box `}>
           {card.images.map((url: string) => {
             return (
-              <div className="carousel-item h-full w-full">
+              <div key={'image'+url} className="carousel-item h-full w-full">
                 <img className={"object-cover w-full h-full"} src={url} />
               </div>
             );
@@ -49,7 +49,7 @@ export default function SimpleCard({ id }: { id: string; card?: Card }) {
         {card.body ? (
           <HoverCard>
             <HoverCardTrigger>
-              <a>Show More</a>{" "}
+              Show More{" "}
             </HoverCardTrigger>
             <HoverCardContent className={" glass z-[100] bg-background/90"}>
               <div className={"w-full h-full "}>
@@ -62,6 +62,7 @@ export default function SimpleCard({ id }: { id: string; card?: Card }) {
           {card?.tags?.map!((tag: string) => {
             return (
               <div
+              key={'tag'+card.id+tag}
                 onClick={() => {
                   set("tags", filter?.tags ? [...filter?.tags!, tag] : [tag]);
                 }}
